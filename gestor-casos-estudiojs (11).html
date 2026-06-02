@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestor Casos Recreo - Móvil Optimizado</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    :root{
+      --ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--soft:#f8fafc;--dark:#0f172a;
+      --shadow:0 18px 45px rgba(15,23,42,.08);--r:22px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at top left,rgba(15,118,110,.14),transparent 34%),linear-gradient(135deg,#f8fafc,#eef3f4);color:var(--ink)}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    .app{width:min(1280px,100%);margin:auto;padding:18px}
+    .hero{background:var(--dark);color:#fff;border-radius:28px;padding:26px;box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden;position:relative}
+    .hero:before,.hero:after{content:"";position:absolute;height:1px;background:rgba(255,255,255,.22);width:420px;transform:rotate(-6deg)}
+    .hero:before{top:46px;right:-120px}.hero:after{bottom:48px;left:40px}
+    .hero-content{position:relative;z-index:2;display:flex;justify-content:space-between;gap:18px;align-items:end}.hero-actions{display:flex;gap:10px;flex-wrap:wrap}.hero-actions{display:flex;gap:10px;flex-wrap:wrap}
+    .badge{display:inline-flex;gap:8px;align-items:center;padding:7px 11px;border:1px solid rgba(255,255,255,.14);border-radius:999px;background:rgba(255,255,255,.08);font-size:12px;font-weight:800;color:#cbd5e1}
+    h1{font-size:clamp(30px,6vw,54px);line-height:1;margin:15px 0 8px;letter-spacing:-.04em}
+    .hero p{margin:0;color:#cbd5e1;line-height:1.55;max-width:740px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:16px;padding:12px 15px;background:var(--dark);color:#fff;font-weight:800;text-decoration:none;white-space:nowrap}
+    .btn.white{background:#fff;color:var(--dark)}.btn.outline{background:#fff;color:var(--ink);border:1px solid var(--line)}.btn.small{padding:9px 11px;border-radius:13px;font-size:13px}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+    .stat,.card{background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 8px 28px rgba(15,23,42,.05)}
+    .stat{padding:16px;display:flex;justify-content:space-between;gap:12px}.stat span{color:var(--muted);font-size:13px}.stat strong{display:block;font-size:30px;letter-spacing:-.04em}.stat small{color:#94a3b8}
+    .iconbox{width:42px;height:42px;border-radius:15px;background:#f1f5f9;display:grid;place-items:center}
+    .mobile-tabs{display:none;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;position:sticky;top:0;z-index:20;background:rgba(248,250,252,.92);backdrop-filter:blur(10px);padding:8px 0}.tab-btn{border:1px solid var(--line);background:#fff;color:#334155;border-radius:14px;padding:10px 8px;font-size:13px;font-weight:850}.tab-btn.active{background:var(--dark);color:#fff;border-color:var(--dark)}.layout{display:grid;grid-template-columns:390px 1fr;gap:16px;align-items:start}.sidebar,.detail{display:grid;gap:12px}
+    .filters{padding:14px}.search{display:flex;gap:9px;align-items:center;padding:10px 12px;background:var(--soft);border:1px solid var(--line);border-radius:17px}.search input{border:0;outline:0;background:transparent;flex:1;min-width:0}
+    .filter-grid{display:grid;grid-template-columns:1fr;gap:9px;margin-top:12px}
+    label{display:grid;gap:6px;color:#475569;font-size:13px;font-weight:750}
+    input,select,textarea{width:100%;border:1px solid var(--line);border-radius:13px;padding:10px 11px;outline:none;background:#fff;color:var(--ink)}
+    textarea{min-height:86px;resize:vertical}
+    .list-head{display:flex;justify-content:space-between;align-items:center;padding:0 4px;color:#334155;font-size:14px;font-weight:850}.count{background:#fff;padding:6px 9px;border-radius:999px;color:#64748b;font-size:12px}
+    .case-list{display:grid;gap:10px}.case-card{width:100%;border:1px solid var(--line);background:#fff;border-radius:20px;padding:14px;text-align:left;box-shadow:0 8px 22px rgba(15,23,42,.04)}
+    .case-card.active{border-color:var(--dark);box-shadow:0 0 0 4px rgba(15,23,42,.08)}
+    .case-id{font-size:11px;font-weight:900;color:#94a3b8;letter-spacing:.08em}.case-title{display:block;margin-top:4px;font-size:16px;line-height:1.25;color:var(--ink)}
+    .case-top{display:flex;justify-content:space-between;gap:10px}.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:999px;padding:5px 8px;font-size:12px;font-weight:850;background:#f8fafc}
+    .nuevo,.archivado{background:#f1f5f9;color:#475569}.acoordinar{background:#fef3c7;color:#92400e}.visitaprogramada{background:#cffafe;color:#155e75}.enacompanamiento{background:#dbeafe;color:#1e40af}.derivado{background:#ede9fe;color:#5b21b6}.cerrado{background:#dcfce7;color:#166534}.urgente{background:#fee2e2;color:#991b1b}.alta{background:#ffedd5;color:#9a3412}.media{background:#fef9c3;color:#854d0e}.baja{background:#dcfce7;color:#166534}
+    .case-meta{display:grid;gap:7px;margin-top:12px;color:#64748b;font-size:13px}
+    .map-card,.case-detail{padding:16px}.section-title{display:flex;align-items:center;gap:8px;margin:0;font-size:18px}.section-desc{color:var(--muted);line-height:1.45;margin:6px 0 0;font-size:14px}.map-head{display:flex;justify-content:space-between;gap:15px;align-items:start;margin-bottom:12px}
+    #mainMap{height:410px;border-radius:22px;border:1px solid var(--line);overflow:hidden;background:#e5e7eb}
+    #pickerMap{height:320px;border-radius:18px;border:1px solid var(--line);overflow:hidden;background:#e5e7eb;margin-top:10px}
+    .map-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:11px}.map-stat{border-radius:16px;background:#f8fafc;padding:11px;min-width:0}.map-stat small{color:#94a3b8;display:block;font-weight:800}.map-stat strong{display:block;margin-top:4px;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .detail-header{display:flex;justify-content:space-between;gap:14px;align-items:start;padding-bottom:16px;border-bottom:1px solid var(--line)}.detail-header h2{margin:4px 0 0;font-size:clamp(23px,4vw,32px);line-height:1.08;letter-spacing:-.035em}
+    .detail-grid{display:grid;grid-template-columns:1.12fr .88fr;gap:15px;margin-top:16px}.subcard{border:1px solid var(--line);border-radius:20px;padding:15px;background:#fff}.subcard+.subcard{margin-top:12px}.subcard h3{margin:0;font-size:16px;display:flex;align-items:center;gap:7px}.subcard p{color:var(--muted);line-height:1.55;margin:10px 0 0;font-size:14px}.latest{margin-top:10px;background:#f8fafc;border-radius:16px;padding:13px;color:var(--muted);line-height:1.55;font-size:14px}
+    .data-list{display:grid;gap:12px;margin-top:12px}.data-row{display:flex;gap:10px;align-items:start;color:var(--muted);font-size:14px}.data-row small{display:block;color:#94a3b8;font-weight:800}.data-row strong{display:block;color:#334155}.privacy{background:var(--dark);color:#fff;border-radius:20px;padding:16px;margin-top:12px}.privacy p{color:#cbd5e1;line-height:1.55;font-size:14px}
+    .timeline-form{margin-top:12px;background:#f8fafc;border:1px solid var(--line);border-radius:18px;padding:13px}.timeline-form-grid{display:grid;grid-template-columns:145px 160px 1fr;gap:9px}.timeline{display:grid;gap:12px;margin-top:15px}.movement{display:grid;grid-template-columns:36px 1fr;gap:10px;position:relative}.movement-dot{width:34px;height:34px;border-radius:999px;border:1px solid var(--line);background:#fff;display:grid;place-items:center}.movement:not(:last-child)::before{content:"";position:absolute;left:17px;top:40px;bottom:-10px;width:1px;background:var(--line)}.movement-card{border:1px solid #eef2f7;background:#fff;border-radius:18px;padding:13px;box-shadow:0 8px 18px rgba(15,23,42,.035)}.movement-top{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}.movement-card p{margin:0;color:var(--muted);font-size:14px;line-height:1.55}
+    .steps{display:grid;gap:9px;margin-top:12px}.step{display:grid;grid-template-columns:28px 1fr;gap:10px;border:1px solid #eef2f7;border-radius:17px;padding:11px}.step-number{width:27px;height:27px;border-radius:999px;display:grid;place-items:center;background:var(--dark);color:#fff;font-size:12px;font-weight:900}
+    .empty{padding:28px;border:1px dashed #cbd5e1;border-radius:20px;background:rgba(255,255,255,.72);text-align:center;color:var(--muted)}
+    .modal-backdrop{position:fixed;inset:0;z-index:1000;background:rgba(15,23,42,.62);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:12px}.modal-backdrop.show{display:flex}.modal{width:min(920px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:28px;box-shadow:0 28px 80px rgba(15,23,42,.28)}.modal-head,.modal-foot{position:sticky;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);z-index:3;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;gap:12px}.modal-head{top:0;border-bottom:1px solid var(--line)}.modal-foot{bottom:0;border-top:1px solid var(--line);justify-content:flex-end}.modal-head h2{margin:2px 0 0;font-size:22px}.modal-head small{color:#94a3b8;font-weight:900;letter-spacing:.08em}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:18px}.full{grid-column:1/-1}.geo-box{grid-column:1/-1;border:1px solid var(--line);border-radius:20px;background:#f8fafc;padding:14px}.geo-head{display:flex;justify-content:space-between;gap:12px;align-items:start;margin-bottom:10px}.geo-head h3{margin:0;font-size:15px}.geo-head p{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.45}.geo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.toast{position:fixed;right:16px;bottom:16px;z-index:2000;background:var(--dark);color:#fff;padding:11px 14px;border-radius:15px;box-shadow:var(--shadow);display:none;font-weight:800}.toast.show{display:block}
+    .leaflet-container{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    .leaflet-popup-content-wrapper{border-radius:16px}.leaflet-popup-content{font-size:13px;line-height:1.45}
+    .marker-dot{width:22px;height:22px;border-radius:999px;border:4px solid #fff;box-shadow:0 6px 18px rgba(15,23,42,.35)}
+    .marker-dot.urgente{background:#b91c1c}.marker-dot.alta{background:#ea580c}.marker-dot.media{background:#eab308}.marker-dot.baja{background:#059669}
+    .map-error{display:none;margin-top:10px;padding:12px;border-radius:16px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:13px;font-weight:700}
+
+    .tools-panel{margin-top:16px;padding:14px}
+    .tools-panel details{display:block}
+    .tools-panel summary{cursor:pointer;font-weight:900;color:#334155;list-style:none}
+    .tools-panel summary::-webkit-details-marker{display:none}
+    .tools-panel summary::after{content:"▾";float:right;color:#64748b}
+    .tools-panel details[open] summary::after{content:"▴"}
+    .tools-panel p{margin:8px 0 12px;color:#64748b;font-size:13px;line-height:1.45}
+    .tools-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+    @media(max-width:1050px){.layout{grid-template-columns:1fr}.filter-grid{grid-template-columns:repeat(3,1fr)}}
+    @media(max-width:760px){
+
+      .tools-panel{margin-top:10px;padding:12px;border-radius:18px}
+      .tools-actions{display:grid;grid-template-columns:1fr;gap:8px}
+      .tools-actions .btn{width:100%}
+
+      .mobile-tabs{display:grid}
+      body{background:#f8fafc}
+      .app{padding:10px}
+      .hero{padding:18px;border-radius:20px;margin-bottom:10px}
+      .hero h1{font-size:28px;margin:10px 0 6px}
+      .hero p{font-size:13px;line-height:1.45}
+      .badge{font-size:11px;padding:6px 10px}
+      .hero-content{flex-direction:column;align-items:start}
+      .hero-actions{width:100%;display:grid!important;grid-template-columns:1fr;gap:8px}
+      .hero-actions .btn{width:100%;padding:11px 12px}
+      .stats{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:8px}
+      .stat{padding:11px;border-radius:17px}
+      .stat span{font-size:12px}.stat strong{font-size:24px}.stat small{display:none}.iconbox{display:none}
+      .layout{display:block}
+      .mobile-view-cases,.mobile-view-map,.mobile-view-detail{display:none}
+      body.mobile-cases .mobile-view-cases{display:grid}
+      body.mobile-map .mobile-view-map{display:block}
+      body.mobile-detail .mobile-view-detail{display:block}
+      .sidebar{gap:10px}
+      .filters{padding:12px;border-radius:18px}
+      .filter-grid{display:none}
+      .list-head{margin-top:8px}
+      .case-card{padding:12px;border-radius:18px}
+      .case-meta span:nth-child(2){display:none}
+      .case-meta{font-size:12px}
+      .chips .chip:nth-child(n+3){display:none}
+      .map-card,.case-detail{padding:12px;border-radius:18px}
+      .map-head{gap:8px;margin-bottom:10px}
+      .map-head .chips{display:none}
+      .section-title{font-size:16px}.section-desc{font-size:12px}
+      #mainMap{height:calc(100vh - 265px);min-height:330px;border-radius:18px}
+      .map-stats{grid-template-columns:1fr 1fr}
+      .map-stats .map-stat:nth-child(3){display:none}
+      .detail-header{gap:10px;padding-bottom:12px}
+      .detail-header .btn{display:none}
+      .detail-header h2{font-size:22px}
+      .detail-grid{display:block;margin-top:12px}
+      .subcard{padding:13px;border-radius:17px}
+      .subcard p{font-size:13px}
+      .detail-grid aside .subcard{display:none}
+      .privacy{display:block;margin-top:10px;padding:13px;border-radius:17px}
+      .steps{display:none}
+      .timeline-form-grid{grid-template-columns:1fr}
+      .movement-card{padding:12px}
+      .modal-backdrop{align-items:flex-end;padding:0}
+      .modal{width:100%;max-height:94vh;border-radius:24px 24px 0 0}
+      .modal-head,.modal-foot{padding:14px}
+      .form-grid{grid-template-columns:1fr;padding:14px;gap:10px}
+      #pickerMap{height:270px}
+      input,select,textarea{padding:10px}
+      .geo-box{padding:12px;border-radius:18px}
+      .geo-head{gap:8px}
+      .geo-head .btn{width:100%}
+    }
+    @media(max-width:760px){
+      .app{padding:12px}.hero{padding:20px;border-radius:22px}.hero-content{flex-direction:column;align-items:start}.btn.white{width:100%}
+      .stats{grid-template-columns:1fr 1fr}.stat{padding:13px}.stat strong{font-size:26px}.layout,.detail-grid,.filter-grid,.timeline-form-grid,.form-grid,.geo-grid,.map-stats{grid-template-columns:1fr}
+      .map-head,.detail-header,.geo-head{flex-direction:column}#mainMap{height:360px}#pickerMap{height:320px}.modal{border-radius:22px}.modal-foot{flex-direction:column}.modal-foot .btn{width:100%}
+    }
+  </style>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="hero">
+      <div class="hero-content">
+        <div>
+          <span class="badge">🤝 Panel reservado del equipo</span>
+          <h1>Gestión de casos especiales</h1>
+          <p>Registro interno para ordenar pedidos especiales, visitas familiares, acompañamientos, gestiones y recorridas territoriales en Recreo.</p>
+        </div>
+        <button class="btn white" id="openModalBtn">＋ Cargar caso</button>
+          </div>
+      </div>
+    </header>
+
+    <section class="stats">
+      <div class="stat"><div><span>Total de casos</span><strong id="statTotal">0</strong><small>Registros cargados</small></div><div class="iconbox">📋</div></div>
+      <div class="stat"><div><span>A coordinar</span><strong id="statCoordinate">0</strong><small>Requieren contacto</small></div><div class="iconbox">⏱️</div></div>
+      <div class="stat"><div><span>Atención alta</span><strong id="statHigh">0</strong><small>Sensibles o urgentes</small></div><div class="iconbox">⚠️</div></div>
+      <div class="stat"><div><span>Cerrados</span><strong id="statClosed">0</strong><small>Finalizados</small></div><div class="iconbox">✅</div></div>
+    </section>
+
+    <nav class="mobile-tabs">
+      <button class="tab-btn active" data-view="cases">Casos</button>
+      <button class="tab-btn" data-view="map">Mapa</button>
+      <button class="tab-btn" data-view="detail">Detalle</button>
+    </nav>
+
+    <main class="layout">
+      <aside class="sidebar mobile-view-cases">
+        <section class="card filters">
+          <div class="search"><span>🔎</span><input id="searchInput" type="search" placeholder="Buscar por caso, persona, barrio o tema..." /></div>
+          <div class="filter-grid">
+            <label>Estado<select id="statusFilter"></select></label>
+            <label>Nivel de atención<select id="priorityFilter"></select></label>
+            <label>Tipo de caso<select id="categoryFilter"></select></label>
+          </div>
+        </section>
+        <div class="list-head"><span>Casos encontrados</span><span class="count" id="resultCount">0 resultados</span></div>
+        <section class="case-list" id="caseList"></section>
+      </aside>
+
+      <section class="detail">
+        <section class="card map-card mobile-view-map">
+          <div class="map-head">
+            <div><h2 class="section-title">📍 Mapa real de Recreo</h2><p class="section-desc">Mapa basado en OpenStreetMap. Al seleccionar un caso se muestra su ubicación real y el enlace para abrirlo en Google Maps.</p></div>
+            <div class="chips"><span class="chip urgente">Urgente</span><span class="chip alta">Alta</span><span class="chip media">Media</span><span class="chip baja">Baja</span></div>
+          </div>
+          <div id="mainMap"></div>
+          <div class="map-error" id="mapError">No se pudo cargar el mapa. Revisá que el archivo esté abierto con internet activo en Chrome o subilo a Drive/Netlify/Firebase para probarlo mejor.</div>
+          <div class="map-stats">
+            <div class="map-stat"><small>Casos con ubicación</small><strong id="mapLocated">0</strong></div>
+            <div class="map-stat"><small>Caso seleccionado</small><strong id="mapSelected">Sin selección</strong></div>
+            <div class="map-stat"><small>Coordenadas</small><strong id="mapCoords">No cargadas</strong></div>
+          </div>
+        </section>
+        <section class="card case-detail mobile-view-detail" id="detailPanel"></section>
+      </section>
+    </main>
+
+    <section class="card tools-panel">
+      <details>
+        <summary>Herramientas avanzadas</summary>
+        <p>Opciones secundarias para respaldo o carga masiva de datos.</p>
+        <div class="tools-actions">
+          <button class="btn outline" id="exportCsvBtn" type="button">⬇️ Exportar planilla</button>
+          <button class="btn outline" id="importCsvBtn" type="button">⬆️ Importar CSV</button>
+          <input id="importCsvInput" type="file" accept=".csv,text/csv" style="display:none" />
+        </div>
+      </details>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+      <div class="modal-head"><div><small>NUEVO REGISTRO</small><h2>Cargar caso especial</h2></div><button class="btn outline small" id="closeModalBtn">✕</button></div>
+      <form id="caseForm">
+        <div class="form-grid">
+          <label class="full">Título del caso<input name="title" placeholder="Ej: Visita a familia, acompañamiento a vecino..." /></label>
+          <label>Persona, familia o institución<input name="person" placeholder="Nombre o referencia reservada" /></label>
+          <label>Teléfono<input name="phone" placeholder="Opcional" /></label>
+          <label>Correo<input name="email" placeholder="Opcional" /></label>
+          <label>Barrio / zona<input name="barrio" placeholder="Ej: Centro, Nobleza, Los Hornos..." /></label>
+          <label class="full">Lugar de referencia<input name="address" placeholder="Domicilio, punto de encuentro o referencia" /></label>
+
+          <div class="geo-box">
+            <div class="geo-head">
+              <div>
+                <h3>🎯 Geolocalización con mapa real</h3>
+                <p>Tocá el mapa de OpenStreetMap para marcar el lugar del caso. También podés usar la ubicación actual del celular.</p>
+              </div>
+              <button type="button" class="btn outline small" id="useLocationBtn">📌 Usar mi ubicación</button>
+            </div>
+            <div id="pickerMap"></div>
+            <div class="geo-grid">
+              <label>Latitud<input name="latitude" type="number" step="any" placeholder="-31.490000" /></label>
+              <label>Longitud<input name="longitude" type="number" step="any" placeholder="-60.735000" /></label>
+            </div>
+          </div>
+
+          <label>Tipo de caso<select name="category" id="categorySelect"></select></label>
+          <label>Estado<select name="status" id="statusSelect"></select></label>
+          <label>Nivel de atención<select name="priority" id="prioritySelect"></select></label>
+          <label>Responsable<input name="responsible" placeholder="Persona o grupo del equipo" /></label>
+          <label>Origen<input name="source" value="WhatsApp" placeholder="Vecino, familia, referente..." /></label>
+          <label>Próxima acción<input name="dueDate" type="date" /></label>
+          <label class="full">Situación / pedido<textarea name="description" placeholder="Detalle general del caso, contexto necesario y posible acompañamiento..."></textarea></label>
+          <label class="full">Último movimiento<textarea name="lastUpdate">Caso cargado inicialmente.</textarea></label>
+        </div>
+        <div class="modal-foot"><button type="button" class="btn outline" id="cancelBtn">Cancelar</button><button type="submit" class="btn">💾 Guardar caso</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Guardado</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+window.addEventListener("load", function(){
+if(typeof L==="undefined"){
+  document.getElementById("mapError").style.display="block";
+  alert("No se pudo cargar el mapa. Abrí el archivo con internet activo o probalo publicado en una web.");
+  return;
+}
+
+
+const FB_CONFIG = {
+  apiKey:            "AIzaSyBltxsQZ5XAGzPNriCktuS-TGhxuRF6yUk",
+  authDomain:        "gestor-de-casos-c5091.firebaseapp.com",
+  projectId:         "gestor-de-casos-c5091",
+  storageBucket:     "gestor-de-casos-c5091.firebasestorage.app",
+  messagingSenderId: "50460304024",
+  appId:             "1:50460304024:web:764b97fac7d2a5476126ed"
+};
+const SHEETS_URL = "https://script.google.com/macros/s/AKfycbxN-ubMfXN8fDe3oxpgjGexUYOI_QuiFzIGhgsEoS6PISzEDPmhwI4SbycEHPdSpLWA/exec";
+
+let db = null;
+
+function initFirebase() {
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+    db = firebase.firestore();
+    escucharCasosFirebase();
+  } catch(e) {
+    console.warn('Firebase no disponible, usando localStorage:', e.message);
+  }
+}
+
+function escucharCasosFirebase() {
+  db.collection('casos').orderBy('_fecha', 'desc').onSnapshot(snap => {
+    if (snap.empty) return;
+    cases = snap.docs.map(d => ({ ...d.data(), _firebaseId: d.id }));
+    if (!selectedId) selectedId = cases[0]?.id || null;
+    render();
+  }, err => {
+    console.warn('Firestore error:', err.message);
+  });
+}
+
+async function guardarEnFirebase(c) {
+  if (!db) return;
+  try {
+    await db.collection('casos').add({ ...c, _fecha: firebase.firestore.FieldValue.serverTimestamp() });
+  } catch(e) {
+    console.warn('Error guardando en Firebase:', e.message);
+  }
+}
+
+async function actualizarEnFirebase(caso) {
+  if (!db || !caso._firebaseId) return;
+  try {
+    const { _firebaseId, ...data } = caso;
+    await db.collection('casos').doc(_firebaseId).set(data);
+  } catch(e) {
+    console.warn('Error actualizando Firebase:', e.message);
+  }
+}
+
+async function enviarASheets(c) {
+  try {
+    const params = new URLSearchParams({
+      fecha: new Date().toLocaleString('es-AR'),
+      tipo: c.category || '',
+      titulo: c.title || '',
+      detalle: c.description || '',
+      nombre: c.person || '',
+      contacto: c.phone || '',
+      dir: c.address || '',
+      resp: c.responsible || '',
+      prio: c.priority || '',
+      estado: c.status || '',
+      lat: c.latitude || '',
+      lng: c.longitude || ''
+    });
+    await fetch(SHEETS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString()
+    });
+  } catch(e) {
+    console.warn('Error enviando a Sheets:', e.message);
+  }
+}
+
+const RECREO_CENTER=[-31.4878,-60.7322], STORAGE_KEY="gestor_casos_especiales_osm_recreo_v2";
+const statuses=["Todos","Nuevo","A coordinar","Visita programada","En acompañamiento","Derivado","Cerrado","Archivado"];
+const priorities=["Todos","Urgente","Alta","Media","Baja"];
+const categories=["Todas","Visita familiar","Acompañamiento vecinal","Situación social","Gestión institucional","Recorrida territorial","Pedido del equipo","Salud / atención","Educación / trámites","Adultos mayores","Niñez y familia","Otro"];
+
+const initialCases=[
+{id:"CASO-001",title:"Visita a familia por situación particular",person:"Familia reservada",phone:"342 000-0000",email:"",barrio:"Centro",address:"Referencia reservada",latitude:-31.4878,longitude:-60.7322,category:"Visita familiar",status:"A coordinar",priority:"Alta",responsible:"Equipo de acompañamiento",source:"Referente barrial",dueDate:"2026-06-05",description:"Se solicita una visita reservada para conocer una situación familiar delicada, escuchar el caso y definir posibles formas de acompañamiento.",lastUpdate:"Se cargó el caso y queda pendiente coordinar día y horario de visita.",history:[{id:"MOV-001-1",date:"2026-06-01",type:"Carga inicial",detail:"Se recibió el pedido a través de un referente barrial y se registró como caso reservado.",responsible:"Equipo de acompañamiento"},{id:"MOV-001-2",date:"2026-06-02",type:"Coordinación pendiente",detail:"Queda pendiente acordar día y horario para realizar la visita familiar.",responsible:"Equipo de acompañamiento"}]},
+{id:"CASO-002",title:"Vecino se acercó por inconveniente personal",person:"Vecino reservado",phone:"342 111-1111",email:"",barrio:"Nobleza",address:"Punto de encuentro a definir",latitude:-31.4824,longitude:-60.7420,category:"Acompañamiento vecinal",status:"En acompañamiento",priority:"Media",responsible:"Referente territorial",source:"Atención directa",dueDate:"2026-06-04",description:"El vecino manifestó estar atravesando un inconveniente y pidió orientación. Se requiere escucha, registro responsable y seguimiento sin exposición pública.",lastUpdate:"Se realizó primer contacto. Falta definir si corresponde articular con una institución o área específica.",history:[{id:"MOV-002-1",date:"2026-06-01",type:"Primer contacto",detail:"El vecino fue escuchado por el equipo y se registró la situación general sin exponer datos sensibles.",responsible:"Referente territorial"}]},
+{id:"CASO-003",title:"Guía de recorrida por puntos sensibles",person:"Equipo territorial",phone:"",email:"",barrio:"Los Hornos",address:"Recorrido barrial sugerido",latitude:-31.4972,longitude:-60.7258,category:"Recorrida territorial",status:"Visita programada",priority:"Baja",responsible:"Coordinación territorial",source:"Planificación interna",dueDate:"2026-06-07",description:"Se propone una recorrida en distintos puntos del barrio para conversar con vecinos, relevar situaciones particulares y ordenar futuras gestiones.",lastUpdate:"Recorrido cargado como guía interna. Falta confirmar integrantes del equipo y horario.",history:[{id:"MOV-003-1",date:"2026-06-01",type:"Planificación",detail:"Se cargó una guía de recorrida para ordenar puntos de visita y posibles conversaciones con vecinos.",responsible:"Coordinación territorial"}]}
+];
+
+let cases=loadCases(), selectedId=cases[0]?.id||null, filters={query:"",status:"Todos",priority:"Todos",category:"Todas"};
+let mainMap, pickerMap, markerLayer, pickerMarker;
+const el=id=>document.getElementById(id);
+
+function normalize(t){return String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()}
+function slug(t){return normalize(t).replace(/[^a-z0-9]/g,"")}
+function esc(v){return String(v||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
+function today(){return new Date().toISOString().slice(0,10)}
+function hasCoordinates(i){return i&&i.latitude!==""&&i.longitude!==""&&!Number.isNaN(Number(i.latitude))&&!Number.isNaN(Number(i.longitude))}
+function mapsUrl(i){return hasCoordinates(i)?`https://www.google.com/maps/search/?api=1&query=${Number(i.latitude)},${Number(i.longitude)}`:"#"}
+function loadCases(){try{const s=localStorage.getItem(STORAGE_KEY);return s?JSON.parse(s):initialCases}catch{return initialCases}}
+function saveCases(){localStorage.setItem(STORAGE_KEY,JSON.stringify(cases))}
+function fillSelect(sel,ops,selected){sel.innerHTML=ops.map(o=>`<option ${o===selected?"selected":""}>${esc(o)}</option>`).join("")}
+
+function makeIcon(priority){
+  return L.divIcon({className:"",html:`<div class="marker-dot ${slug(priority)}"></div>`,iconSize:[28,28],iconAnchor:[14,14]});
+}
+function addTileLayer(map){
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{
+    maxZoom:19,
+    attribution:'&copy; OpenStreetMap contributors'
+  }).addTo(map);
+}
+function initMaps(){
+  mainMap=L.map("mainMap",{scrollWheelZoom:true, zoomControl:true}).setView(RECREO_CENTER,14);
+  addTileLayer(mainMap);
+  markerLayer=L.layerGroup().addTo(mainMap);
+
+  pickerMap=L.map("pickerMap",{scrollWheelZoom:true, zoomControl:true}).setView(RECREO_CENTER,14);
+  addTileLayer(pickerMap);
+
+  pickerMap.on("click", e=>{
+    const form=el("caseForm");
+    form.elements.latitude.value=e.latlng.lat.toFixed(6);
+    form.elements.longitude.value=e.latlng.lng.toFixed(6);
+    setPickerMarker(e.latlng.lat,e.latlng.lng,form.elements.priority.value);
+    showToast("Punto marcado en el mapa");
+  });
+
+  setTimeout(()=>{mainMap.invalidateSize();pickerMap.invalidateSize()},400);
+}
+
+function setPickerMarker(lat,lng,priority){
+  if(!pickerMap) return;
+  if(pickerMarker) pickerMarker.remove();
+  pickerMarker=L.marker([lat,lng],{icon:makeIcon(priority||"Media")}).addTo(pickerMap);
+  pickerMap.setView([lat,lng],16);
+}
+
+
+function csvEscape(value){
+  const text=String(value ?? "");
+  return `"${text.replaceAll('"','""')}"`;
+}
+function exportCasesCsv(){
+  const headers=["id","title","person","phone","email","barrio","address","latitude","longitude","category","status","priority","responsible","source","dueDate","description","lastUpdate","history"];
+  const rows=cases.map(c=>headers.map(h=>csvEscape(h==="history"?JSON.stringify(c.history||[]):c[h])).join(","));
+  const csv=[headers.join(","),...rows].join("\n");
+  const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=`casos-especiales-recreo-${today()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast("Planilla descargada");
+}
+function parseCsvLine(line){
+  const result=[];
+  let current="",inQuotes=false;
+  for(let i=0;i<line.length;i++){
+    const char=line[i],next=line[i+1];
+    if(char==='"' && inQuotes && next==='"'){current+='"';i++;continue}
+    if(char==='"'){inQuotes=!inQuotes;continue}
+    if(char==="," && !inQuotes){result.push(current);current="";continue}
+    current+=char;
+  }
+  result.push(current);
+  return result;
+}
+function importCasesCsv(event){
+  const file=event.target.files && event.target.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const content=String(reader.result||"").replace(/^\ufeff/,"");
+      const lines=content.split(/\r?\n/).filter(Boolean);
+      if(lines.length<2){showToast("CSV vacío");return}
+      const headers=parseCsvLine(lines[0]).map(h=>h.trim());
+      const imported=lines.slice(1).map((line,index)=>{
+        const values=parseCsvLine(line);
+        const obj={};
+        headers.forEach((h,i)=>obj[h]=values[i]||"");
+        let history=[];
+        try{history=obj.history?JSON.parse(obj.history):[]}catch{history=[]}
+        return {
+          id: obj.id || `CASO-IMP-${String(index+1).padStart(3,"0")}`,
+          title: obj.title || "Caso importado",
+          person: obj.person || "Persona / familia reservada",
+          phone: obj.phone || "",
+          email: obj.email || "",
+          barrio: obj.barrio || "Sin barrio asignado",
+          address: obj.address || "Sin dirección precisa",
+          latitude: obj.latitude===""?"":Number(obj.latitude),
+          longitude: obj.longitude===""?"":Number(obj.longitude),
+          category: obj.category || "Otro",
+          status: obj.status || "Nuevo",
+          priority: obj.priority || "Media",
+          responsible: obj.responsible || "Equipo",
+          source: obj.source || "CSV",
+          dueDate: obj.dueDate || "Sin fecha",
+          description: obj.description || "Sin descripción cargada.",
+          lastUpdate: obj.lastUpdate || "Caso importado desde planilla.",
+          history: Array.isArray(history) ? history : []
+        };
+      });
+      cases=[...imported,...cases];
+      selectedId=cases[0]?.id||null;
+      saveCases();
+      render();
+      showToast(`${imported.length} caso${imported.length===1?"":"s"} importado${imported.length===1?"":"s"}`);
+    }catch(error){
+      showToast("No se pudo importar el CSV");
+    }finally{
+      event.target.value="";
+    }
+  };
+  reader.readAsText(file,"utf-8");
+}
+
+function setMobileView(view){
+  document.body.classList.remove("mobile-cases","mobile-map","mobile-detail");
+  document.body.classList.add(`mobile-${view}`);
+  document.querySelectorAll(".tab-btn").forEach(btn=>{
+    btn.classList.toggle("active",btn.dataset.view===view);
+  });
+  setTimeout(()=>{
+    if(view==="map" && typeof mainMap!=="undefined" && mainMap) mainMap.invalidateSize();
+  },150);
+}
+function setupMobileTabs(){
+  if(!document.body.classList.contains("mobile-cases") && !document.body.classList.contains("mobile-map") && !document.body.classList.contains("mobile-detail")){
+    document.body.classList.add("mobile-cases");
+  }
+  document.querySelectorAll(".tab-btn").forEach(btn=>{
+    btn.addEventListener("click",()=>setMobileView(btn.dataset.view));
+  });
+}
+function setup(){
+ initFirebase();
+ setupMobileTabs();
+ fillSelect(el("statusFilter"),statuses,"Todos");fillSelect(el("priorityFilter"),priorities,"Todos");fillSelect(el("categoryFilter"),categories,"Todas");
+ fillSelect(el("statusSelect"),statuses.filter(x=>x!=="Todos"),"Nuevo");fillSelect(el("prioritySelect"),priorities.filter(x=>x!=="Todos"),"Media");fillSelect(el("categorySelect"),categories.filter(x=>x!=="Todas"),"Otro");
+
+ el("openModalBtn").onclick=openModal;
+ const exportBtn=el("exportCsvBtn"), importBtn=el("importCsvBtn"), importInput=el("importCsvInput");
+ if(exportBtn) exportBtn.onclick=exportCasesCsv;
+ if(importBtn && importInput) importBtn.onclick=()=>importInput.click();
+ if(importInput) importInput.onchange=importCasesCsv;el("closeModalBtn").onclick=closeModal;el("cancelBtn").onclick=closeModal;
+ el("modalBackdrop").onclick=e=>{if(e.target.id==="modalBackdrop")closeModal()};
+ el("searchInput").oninput=e=>{filters.query=e.target.value;render()};
+ el("statusFilter").onchange=e=>{filters.status=e.target.value;render()};
+ el("priorityFilter").onchange=e=>{filters.priority=e.target.value;render()};
+ el("categoryFilter").onchange=e=>{filters.category=e.target.value;render()};
+ el("useLocationBtn").onclick=useCurrentLocation;
+ el("caseForm").onsubmit=addCase;
+ el("caseForm").elements.priority.addEventListener("change",()=> {
+   const f=el("caseForm");
+   if(f.elements.latitude.value && f.elements.longitude.value) setPickerMarker(Number(f.elements.latitude.value),Number(f.elements.longitude.value),f.elements.priority.value);
+ });
+ el("caseForm").elements.latitude.addEventListener("input",updatePickerFromInputs);
+ el("caseForm").elements.longitude.addEventListener("input",updatePickerFromInputs);
+
+ initMaps();
+ render();
+}
+
+function openModal(){
+  el("modalBackdrop").classList.add("show");
+  setTimeout(()=>{
+    pickerMap.invalidateSize();
+    pickerMap.setView(RECREO_CENTER,14);
+  },350);
+}
+function closeModal(){
+  el("modalBackdrop").classList.remove("show");
+  el("caseForm").reset();
+  el("caseForm").elements.lastUpdate.value="Caso cargado inicialmente.";
+  el("caseForm").elements.source.value="WhatsApp";
+  if(pickerMarker){pickerMarker.remove();pickerMarker=null}
+}
+function useCurrentLocation(){
+  if(!navigator.geolocation){showToast("El navegador no permite ubicación");return}
+  navigator.geolocation.getCurrentPosition(p=>{
+    const f=el("caseForm");
+    f.elements.latitude.value=p.coords.latitude.toFixed(6);
+    f.elements.longitude.value=p.coords.longitude.toFixed(6);
+    setPickerMarker(p.coords.latitude,p.coords.longitude,f.elements.priority.value);
+    showToast("Ubicación cargada");
+  },()=>showToast("No se pudo obtener ubicación"),{enableHighAccuracy:true,timeout:10000,maximumAge:0});
+}
+function updatePickerFromInputs(){
+  const f=el("caseForm"),lat=Number(f.elements.latitude.value),lng=Number(f.elements.longitude.value);
+  if(!Number.isNaN(lat)&&!Number.isNaN(lng)&&f.elements.latitude.value!==""&&f.elements.longitude.value!==""){
+    setPickerMarker(lat,lng,f.elements.priority.value);
+  }
+}
+
+function addCase(e){
+  e.preventDefault();
+  const f=new FormData(e.currentTarget),n=String(cases.length+1).padStart(3,"0"),last=f.get("lastUpdate")||"Caso cargado inicialmente.",resp=f.get("responsible")||"Equipo";
+  const c={id:`CASO-${n}`,title:f.get("title")||"Nuevo caso especial",person:f.get("person")||"Persona / familia reservada",phone:f.get("phone")||"",email:f.get("email")||"",barrio:f.get("barrio")||"Sin barrio asignado",address:f.get("address")||"Sin dirección precisa",latitude:f.get("latitude")===""?"":Number(f.get("latitude")),longitude:f.get("longitude")===""?"":Number(f.get("longitude")),category:f.get("category")||"Otro",status:f.get("status")||"Nuevo",priority:f.get("priority")||"Media",responsible:resp,source:f.get("source")||"WhatsApp",dueDate:f.get("dueDate")||"Sin fecha",description:f.get("description")||"Sin descripción cargada.",lastUpdate:last,history:[{id:`MOV-${Date.now()}`,date:today(),type:"Carga inicial",detail:last,responsible:resp}]};
+  cases=[c,...cases];selectedId=c.id;saveCases();guardarEnFirebase(c);enviarASheets(c);closeModal();showToast("Caso guardado");render();
+}
+function addHistory(e){
+  e.preventDefault();
+  const s=cases.find(i=>i.id===selectedId);if(!s)return;
+  const f=new FormData(e.currentTarget),detail=String(f.get("detail")||"").trim();
+  if(!detail){showToast("Cargá un detalle");return}
+  const m={id:`MOV-${Date.now()}`,date:f.get("date")||today(),type:f.get("type")||"Seguimiento",responsible:f.get("responsible")||s.responsible||"Equipo",detail};
+  cases=cases.map(i=>i.id!==s.id?i:{...i,history:[m,...(i.history||[])],lastUpdate:`${m.type}: ${m.detail}`});
+  saveCases();const casoActualizado=cases.find(i=>i.id===s.id);if(casoActualizado)actualizarEnFirebase(casoActualizado);showToast("Movimiento agregado");render();
+}
+function filteredCases(){
+  return cases.filter(i=>normalize(`${i.id} ${i.title} ${i.person} ${i.barrio} ${i.address} ${i.category} ${i.responsible} ${i.description}`).includes(normalize(filters.query))&&(filters.status==="Todos"||i.status===filters.status)&&(filters.priority==="Todos"||i.priority===filters.priority)&&(filters.category==="Todas"||i.category===filters.category));
+}
+function render(){
+  const list=filteredCases();
+  if(!selectedId||!cases.find(i=>i.id===selectedId))selectedId=cases[0]?.id||null;
+  if(list.length&&!list.find(i=>i.id===selectedId))selectedId=list[0].id;
+  renderStats();renderList(list);renderMap(list);renderDetail();
+}
+function renderStats(){
+  el("statTotal").textContent=cases.length;
+  el("statCoordinate").textContent=cases.filter(i=>i.status==="Nuevo"||i.status==="A coordinar").length;
+  el("statHigh").textContent=cases.filter(i=>i.priority==="Urgente"||i.priority==="Alta").length;
+  el("statClosed").textContent=cases.filter(i=>i.status==="Cerrado").length;
+}
+function renderList(list){
+  el("resultCount").textContent=`${list.length} resultado${list.length===1?"":"s"}`;
+  if(!list.length){el("caseList").innerHTML=`<div class="empty">📋<br><strong>No hay casos</strong><br>Probá cambiando los filtros.</div>`;return}
+  el("caseList").innerHTML=list.map(i=>`<button class="case-card ${i.id===selectedId?"active":""}" data-id="${esc(i.id)}"><div class="case-top"><div><span class="case-id">${esc(i.id)}</span><strong class="case-title">${esc(i.title)}</strong></div><span>⋯</span></div><div class="chips"><span class="chip ${slug(i.status)}">${esc(i.status)}</span><span class="chip ${slug(i.priority)}">Atención ${esc(i.priority)}</span>${hasCoordinates(i)?`<span class="chip">Geolocalizado</span>`:""}</div><div class="case-meta"><span>📍 ${esc(i.barrio)} · ${esc(i.address)}</span><span>👤 ${esc(i.responsible)}</span><span>📅 Próxima acción: ${esc(i.dueDate)}</span></div></button>`).join("");
+  document.querySelectorAll(".case-card").forEach(c=>c.onclick=()=>{selectedId=c.dataset.id;render();if(window.innerWidth<=760)setMobileView("detail")});
+}
+function renderMap(list){
+  if(!mainMap) return;
+  markerLayer.clearLayers();
+  const visible=list.filter(hasCoordinates), selected=cases.find(i=>i.id===selectedId);
+  visible.forEach(i=>{
+    const marker=L.marker([Number(i.latitude),Number(i.longitude)],{icon:makeIcon(i.priority)}).addTo(markerLayer);
+    marker.bindPopup(`<strong>${esc(i.title)}</strong><br>${esc(i.barrio)} · ${esc(i.address)}<br><br><a href="${mapsUrl(i)}" target="_blank">Abrir en Google Maps</a>`);
+    marker.on("click",()=>{selectedId=i.id;render()});
+    if(i.id===selectedId) marker.openPopup();
+  });
+  if(selected&&hasCoordinates(selected)){
+    mainMap.setView([Number(selected.latitude),Number(selected.longitude)],15);
+  } else {
+    mainMap.setView(RECREO_CENTER,14);
+  }
+  el("mapLocated").textContent=visible.length;
+  el("mapSelected").textContent=selected?.id||"Sin selección";
+  el("mapCoords").textContent=selected&&hasCoordinates(selected)?`${Number(selected.latitude).toFixed(5)}, ${Number(selected.longitude).toFixed(5)}`:"No cargadas";
+  setTimeout(()=>mainMap.invalidateSize(),100);
+}
+function renderDetail(){
+  const s=cases.find(i=>i.id===selectedId);
+  if(!s){el("detailPanel").innerHTML=`<div class="empty">No hay caso seleccionado.</div>`;return}
+  const h=s.history||[];
+  el("detailPanel").innerHTML=`<div class="detail-header"><div><span class="case-id">${esc(s.id)}</span><h2>${esc(s.title)}</h2><div class="chips"><span class="chip ${slug(s.status)}">${esc(s.status)}</span><span class="chip ${slug(s.priority)}">Atención ${esc(s.priority)}</span><span class="chip">${esc(s.category)}</span>${hasCoordinates(s)?`<span class="chip">Con ubicación</span>`:""}</div></div><button class="btn outline" onclick="window.print()">📄 Generar ficha</button></div><div class="detail-grid"><div><div class="subcard"><h3>💬 Situación / pedido</h3><p>${esc(s.description)}</p></div><div class="subcard"><h3>⏱️ Último movimiento</h3><div class="latest">${esc(s.lastUpdate)}</div></div><div class="subcard"><div class="movement-top"><div><h3>🕘 Historial de intervenciones</h3><p>Línea de tiempo del caso: llamadas, visitas, derivaciones, reuniones y seguimientos.</p></div><span class="chip">${h.length} movimiento${h.length===1?"":"s"}</span></div><form class="timeline-form" id="historyForm"><div class="timeline-form-grid"><label>Fecha<input type="date" name="date" value="${today()}"></label><label>Tipo<select name="type">${["Llamada","Visita","Reunión","Derivación","Mensaje","Seguimiento","Cierre","Otro"].map(t=>`<option>${t}</option>`).join("")}</select></label><label>Responsable<input name="responsible" placeholder="Quién realizó la intervención"></label></div><label style="margin-top:10px">Detalle<textarea name="detail" placeholder="Ej: se visitó a la familia, se acordó volver a llamar..."></textarea></label><div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn" type="submit">➤ Agregar movimiento</button></div></form><div class="timeline">${h.length?h.map(m=>`<div class="movement"><div class="movement-dot">○</div><div class="movement-card"><div class="movement-top"><div><span class="chip">${esc(m.type)}</span> <span style="color:#94a3b8;font-size:12px;font-weight:800">${esc(m.date)}</span></div><span style="color:#64748b;font-size:12px;font-weight:800">${esc(m.responsible||"Equipo")}</span></div><p>${esc(m.detail)}</p></div></div>`).join(""):`<div class="empty">Todavía no hay movimientos cargados.</div>`}</div></div><div class="subcard"><h3>🧭 Próximas acciones sugeridas</h3><div class="steps">${["Confirmar si requiere visita, llamada, derivación o acompañamiento sostenido.","Asignar responsable y fecha concreta para el próximo contacto.","Registrar información mínima sin exponer datos sensibles innecesarios.","Actualizar el estado después de cada visita, reunión, llamada o gestión realizada."].map((t,i)=>`<div class="step"><span class="step-number">${i+1}</span><span>${esc(t)}</span></div>`).join("")}</div></div></div><aside><div class="subcard"><h3>Datos principales</h3><div class="data-list"><div class="data-row"><span>👤</span><div><small>Persona / familia / institución</small><strong>${esc(s.person)}</strong></div></div><div class="data-row"><span>☎️</span><div><small>Teléfono</small><strong>${esc(s.phone||"No informado")}</strong></div></div><div class="data-row"><span>✉️</span><div><small>Correo</small><strong>${esc(s.email||"No informado")}</strong></div></div><div class="data-row"><span>📍</span><div><small>Lugar de referencia</small><strong>${esc(s.barrio)}</strong><span>${esc(s.address)}</span><small style="margin-top:4px">${hasCoordinates(s)?`${Number(s.latitude).toFixed(6)}, ${Number(s.longitude).toFixed(6)}`:"Sin coordenadas cargadas"}</small>${hasCoordinates(s)?`<br><a href="${mapsUrl(s)}" target="_blank" rel="noreferrer">Abrir ubicación</a>`:""}</div></div><div class="data-row"><span>🧑‍💼</span><div><small>Responsable</small><strong>${esc(s.responsible)}</strong></div></div><div class="data-row"><span>📅</span><div><small>Próxima acción</small><strong>${esc(s.dueDate)}</strong></div></div></div></div><div class="privacy"><strong>Criterio de privacidad</strong><p>Este registro puede contener situaciones personales o familiares sensibles. Cargar solo la información necesaria y evitar compartir datos fuera del equipo autorizado.</p></div></aside></div>`;
+  el("historyForm").onsubmit=addHistory;
+}
+function showToast(t){const x=el("toast");x.textContent=t;x.classList.add("show");setTimeout(()=>x.classList.remove("show"),1800)}
+setup();
+});
+</script>
+</body>
+</html>
